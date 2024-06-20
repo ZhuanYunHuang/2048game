@@ -9,7 +9,7 @@
      </div>
      <div class="section">
       <tr v-for="(rowItem, rowIndex) in cellList" :key="rowIndex" class="cell-box flexMainXYcenter">
-        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter" :style="`color: ${getNumColor(cellItem.value)}`">
+        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter" :style="`color: ${getNumColor(cellItem.value)}; background: ${getBgColor(cellItem.value)}`">
           {{ cellItem.value }}
         </td>
       </tr>
@@ -19,7 +19,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { getNumColor } from '@/assets/enum'
+import { getNumColor, getBgColor } from '@/assets/enum'
 const cellList = ref([
   [ { id: '0-0', value: 0 }, { id: '0-1', value: 0 }, { id: '0-2', value: 0 }, { id: '0-3', value: 0 } ],
   [ { id: '1-0', value: 0 }, { id: '1-1', value: 0 }, { id: '1-2', value: 0 }, { id: '1-3', value: 0 } ],

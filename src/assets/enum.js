@@ -15,9 +15,9 @@ export const getBgColor = (number) => {
     case 4096: return "#a6c"
     case 8192: return "#93c"
   }
-  return "#000";
+  return "#C8BEB2";
 }
 
 export const getNumColor = (number) => {
-  return number <= 1 ? '#776e65' : '#fff'
+  return number <= 4 ? '#776e65' : '#fff'
 }
