@@ -1,5 +1,5 @@
 //格子颜色
-export const getNumBgColor = (number) => {
+export const getBgColor = (number) => {
   switch(number){
     case 2: return "#eee4da"
     case 4: return "#ede0c8"
@@ -16,4 +16,8 @@ export const getNumBgColor = (number) => {
     case 8192: return "#93c"
   }
   return "#000";
+}
+
+export const getNumColor = (number) => {
+  return number <= 1 ? '#776e65' : '#fff'
 }

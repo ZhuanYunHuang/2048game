@@ -5,25 +5,80 @@
         <span>分数</span>
         <span style="margin-top: 6px;">0</span>
       </div>
-      <div class="score-box begin">开始</div>
+      <div class="score-box begin" @click="init">开始</div>
      </div>
      <div class="section">
       <tr v-for="(rowItem, rowIndex) in cellList" :key="rowIndex" class="cell-box flexMainXYcenter">
-        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell"></td>
+        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter" :style="`color: ${getNumColor(cellItem.value)}`">
+          {{ cellItem.value }}
+        </td>
       </tr>
      </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-
+import { ref, onMounted } from 'vue'
+import { getNumColor } from '@/assets/enum'
 const cellList = ref([
-  [ { id: '0-0' }, { id: '0-1' }, { id: '0-2' }, { id: '0-3' } ],
-  [ { id: '1-0' }, { id: '1-1' }, { id: '1-2' }, { id: '1-3' } ],
-  [ { id: '2-0' }, { id: '2-1' }, { id: '2-2' }, { id: '2-3' } ],
-  [ { id: '3-0' }, { id: '3-1' }, { id: '3-2' }, { id: '3-3' } ],
+  [ { id: '0-0', value: 0 }, { id: '0-1', value: 0 }, { id: '0-2', value: 0 }, { id: '0-3', value: 0 } ],
+  [ { id: '1-0', value: 0 }, { id: '1-1', value: 0 }, { id: '1-2', value: 0 }, { id: '1-3', value: 0 } ],
+  [ { id: '2-0', value: 0 }, { id: '2-1', value: 0 }, { id: '2-2', value: 0 }, { id: '2-3', value: 0 } ],
+  [ { id: '3-0', value: 0 }, { id: '3-1', value: 0 }, { id: '3-2', value: 0 }, { id: '3-3', value: 0 } ],
 ])
+
+const init = () => {
+  cellList.value.forEach((item) => {
+    item.forEach((_item) => {
+      _item.value = 0
+    })
+  })
+  generateCell(2, 2)
+}
+
+//随机生产方块
+const generateCell = (_num, _value) => {
+  const num = _num || Math.floor(Math.random() * 2) + 1 //随机生成1个或2个方块
+  const canList = [] //可以生成的格子列表(value为0)
+  cellList.value.forEach((item) => {
+    item.forEach((_item) => {
+      if(_item.value === 0) {
+        canList.push(_item.id)
+      }
+    })
+  })
+  let n = num
+  let canListLen = canList.length
+
+  const newCellList = []
+  while(n--) {
+    const cellData = {
+      id: null,
+      value: _value || (Math.floor(Math.random() * 2) === 1 ? 4 : 2)
+    }
+    let newCell = Math.floor(Math.random() * canListLen)
+    while(newCellList.find(item => item.id === newCell)) {
+      newCell = Math.floor(Math.random() * canListLen) //防止生成在同一格子
+    }
+    cellData.id = canList[newCell]
+    newCellList.push(cellData)
+    if(canListLen === 1) break
+  }
+  newCellList.forEach((c) => {
+    cellList.value.forEach((item) => {
+      item.forEach((_item) => {
+        if(c.id == _item.id) {
+          _item.value = c.value
+        }
+      })
+    })
+  })
+  console.log(cellList.value);
+}
+
+onMounted(() => {
+  init()
+})
 
 </script>
 <style scoped lang="less">
