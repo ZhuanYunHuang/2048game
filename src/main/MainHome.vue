@@ -3,7 +3,7 @@
      <div class="header">
       <div class="flexMainXYcenter">
         <div class="score-box flexMainYXcenter">
-          <span>分数</span>
+          <span>分数{{ isEnd ? '结束' : '' }}</span>
           <span style="margin-top: 6px;">{{ totalGoal }}</span>
         </div>
         <!-- <div> 
@@ -36,6 +36,8 @@ const cellList = ref([
   [ { id: '3-0', value: 0 }, { id: '3-1', value: 0 }, { id: '3-2', value: 0 }, { id: '3-3', value: 0 } ],
 ])
 
+const isEnd = ref(false)
+
 const totalGoal = computed(() => {
   let goal = 0
   cellList.value.forEach(i => i.forEach(e => goal += e.value))
@@ -43,6 +45,7 @@ const totalGoal = computed(() => {
 })
 
 const init = () => {
+  isEnd.value = false
   cellList.value.forEach((item) => {
     item.forEach((_item) => {
       _item.value = 0
@@ -66,11 +69,35 @@ const generateCell = (_num, _value) => {
   let n = num
   let canListLen = canList.length
 
+  if(canListLen === 0) {
+  let newCellList = upHandle()
+  if(!isChangeCell(newCellList, cellList.value)) {
+    isEnd.value = true
+    return
+  }
+  newCellList = downHandle()
+  if(!isChangeCell(newCellList, cellList.value)) {
+    isEnd.value = true
+    return
+  }
+  newCellList = leftHandle()
+  if(!isChangeCell(newCellList, cellList.value)) {
+    isEnd.value = true
+    return
+  }
+  newCellList = rightHandle()
+  if(!isChangeCell(newCellList, cellList.value)) {
+    isEnd.value = true
+    return
+  }
+    return
+  }
+
   const newCellList = []
-  while(n-- && canListLen) {
+  while(n--) {
     const cellData = {
       id: null,
-      value: _value || (Math.floor(Math.random() * 10) > 8 ? 4 : 2) //生成2的概率80，4的概率20
+      value: _value || (num === 1 && Math.floor(Math.random() * 10) > 8 ? 4 : 2) //生成2的概率80，4的概率20
     }
     let newCell = canList[Math.floor(Math.random() * canListLen)]
     while(newCellList.find(item => item.id == newCell)) {
@@ -115,10 +142,10 @@ const isChangeCell = (newList, oldList) => {
 
 const baseHandle = throttle((arrow) => {
   const oldCellList = JSON.parse(JSON.stringify(cellList.value))
-  if(arrow === 1) upHandle() 
-  if(arrow === 2) downHandle()
-  if(arrow === 3) leftHandle()
-  if(arrow === 4) rightHandle() 
+  if(arrow === 1) cellList.value = upHandle() 
+  if(arrow === 2) cellList.value = downHandle()
+  if(arrow === 3) cellList.value = leftHandle()
+  if(arrow === 4) cellList.value = rightHandle() 
   if(isChangeCell(cellList.value, oldCellList)) {
     setTimeout(generateCell, 250)
   }
@@ -126,117 +153,125 @@ const baseHandle = throttle((arrow) => {
 
 //向上滑动
 const upHandle = () => {
-  for (let col = 0; col <= cellList.value[0].length - 1; col++) {
-    for(let raw = 0; raw <= cellList.value.length - 1; raw++) {
-      let n = cellList.value.length - 1 - raw
+  const newCellList = JSON.parse(JSON.stringify(cellList.value))
+  for (let col = 0; col <= newCellList[0].length - 1; col++) {
+    for(let raw = 0; raw <= newCellList.length - 1; raw++) {
+      let n = newCellList.length - 1 - raw
       while(n--) {
-        if(cellList.value[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = raw; e <= cellList.value.length - 2; e++) {
-            cellList.value[e][col].value = cellList.value[e+1][col].value
+        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for(let e = raw; e <= newCellList.length - 2; e++) {
+            newCellList[e][col].value = newCellList[e+1][col].value
           }
-          cellList.value[cellList.value.length - 1][col].value = 0 //最后一个用0补充
+          newCellList[newCellList.length - 1][col].value = 0 //最后一个用0补充
         } else {
           break
         }
       }
     }
   }
-  for (let col = 0; col <= cellList.value[0].length - 1; col++) {
-    for(let raw = 0; raw <= cellList.value.length - 2; raw++) {
-      if(cellList.value[raw][col].value != 0 && cellList.value[raw][col].value === cellList.value[raw+1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        cellList.value[raw][col].value += cellList.value[raw+1][col].value
-        for(let e = raw+1; e <= cellList.value.length - 2; e++) {
-          cellList.value[e][col].value = cellList.value[e+1][col].value
+  for (let col = 0; col <= newCellList[0].length - 1; col++) {
+    for(let raw = 0; raw <= newCellList.length - 2; raw++) {
+      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw+1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw+1][col].value
+        for(let e = raw+1; e <= newCellList.length - 2; e++) {
+          newCellList[e][col].value = newCellList[e+1][col].value
         }
-        cellList.value[cellList.value.length - 1][col].value = 0 //最后一个用0补充
+        newCellList[newCellList.length - 1][col].value = 0 //最后一个用0补充
       }
     }
   }
+  return newCellList
 }
 
 
 //向下滑动
 const downHandle = () => {
-  for (let col = cellList.value[0].length - 1; col >= 0; col--) {
-    for(let raw = cellList.value.length - 1; raw >= 0; raw--) {
+  const newCellList = JSON.parse(JSON.stringify(cellList.value))
+  for (let col = newCellList[0].length - 1; col >= 0; col--) {
+    for(let raw = newCellList.length - 1; raw >= 0; raw--) {
       let n = raw
       while(n--) {
-        if(cellList.value[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
           for(let e = raw; e >= 1; e--) {
-            cellList.value[e][col].value = cellList.value[e-1][col].value
+            newCellList[e][col].value = newCellList[e-1][col].value
           }
-          cellList.value[0][col].value = 0 //最后一个用0补充
+          newCellList[0][col].value = 0 //最后一个用0补充
         }
       }
     }
   }
-  for (let col = cellList.value[0].length - 1; col >= 0; col--) {
-    for(let raw = cellList.value.length - 1; raw >= 1; raw--) {
-      if(cellList.value[raw][col].value != 0 && cellList.value[raw][col].value === cellList.value[raw-1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        cellList.value[raw][col].value += cellList.value[raw-1][col].value
+  for (let col = newCellList[0].length - 1; col >= 0; col--) {
+    for(let raw = newCellList.length - 1; raw >= 1; raw--) {
+      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw-1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw-1][col].value
         for(let e = raw-1; e >= 1; e--) {
-          cellList.value[e][col].value = cellList.value[e-1][col].value
+          newCellList[e][col].value = newCellList[e-1][col].value
         }
-        cellList.value[0][col].value = 0 //最后一个用0补充
+        newCellList[0][col].value = 0 //最后一个用0补充
       }
     }
   }
+  return newCellList
 }
 
 //向左滑动
 const leftHandle = () => {
-  for(let raw = 0; raw <= cellList.value.length - 1; raw++) {
-    for (let col = 0; col <= cellList.value[0].length - 1; col++) {
-      let n = cellList.value.length - 1 - col
+  const newCellList = JSON.parse(JSON.stringify(cellList.value))
+  for(let raw = 0; raw <= newCellList.length - 1; raw++) {
+    for (let col = 0; col <= newCellList[0].length - 1; col++) {
+      let n = newCellList.length - 1 - col
       while(n--) {
-        if(cellList.value[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = col; e <= cellList.value[0].length - 2; e++) {
-            cellList.value[raw][e].value = cellList.value[raw][e+1].value
+        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for(let e = col; e <= newCellList[0].length - 2; e++) {
+            newCellList[raw][e].value = newCellList[raw][e+1].value
           }
-          cellList.value[raw][cellList.value[0].length - 1].value = 0 //最后一个用0补充
+          newCellList[raw][newCellList[0].length - 1].value = 0 //最后一个用0补充
         }
       }
     }
   }
-  for(let raw = 0; raw <= cellList.value.length - 1; raw++) {
-    for (let col = 0; col <= cellList.value[0].length - 2; col++) {
-      if(cellList.value[raw][col].value != 0 && cellList.value[raw][col].value === cellList.value[raw][col+1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        cellList.value[raw][col].value += cellList.value[raw][col+1].value
-        for(let e = col+1; e <= cellList.value[0].length - 2; e++) {
-          cellList.value[raw][e].value = cellList.value[raw][e+1].value
+  for(let raw = 0; raw <= newCellList.length - 1; raw++) {
+    for (let col = 0; col <= newCellList[0].length - 2; col++) {
+      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col+1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw][col+1].value
+        for(let e = col+1; e <= newCellList[0].length - 2; e++) {
+          newCellList[raw][e].value = newCellList[raw][e+1].value
         }
-        cellList.value[raw][cellList.value[0].length - 1].value = 0 //最后一个用0补充
+        newCellList[raw][newCellList[0].length - 1].value = 0 //最后一个用0补充
       }
     }
   }
+  return newCellList
 }
 
 //向右滑动
 const rightHandle = () => {
-  for(let raw = cellList.value.length - 1; raw >= 0; raw--) {
-    for (let col = cellList.value[0].length - 1; col >= 0; col--) {
+  const newCellList = JSON.parse(JSON.stringify(cellList.value))
+  for(let raw = newCellList.length - 1; raw >= 0; raw--) {
+    for (let col = newCellList[0].length - 1; col >= 0; col--) {
       let n = col
       while(n--) {
-        if(cellList.value[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
           for(let e = col; e >=1; e--) {
-            cellList.value[raw][e].value = cellList.value[raw][e-1].value
+            newCellList[raw][e].value = newCellList[raw][e-1].value
           }
-          cellList.value[raw][0].value = 0 //最后一个用0补充
+          newCellList[raw][0].value = 0 //最后一个用0补充
         }
       }
     }
   }
-  for(let raw = cellList.value.length - 1; raw >= 0; raw--) {
-    for (let col = cellList.value[0].length - 1; col >= 1; col--) {
-      if(cellList.value[raw][col].value != 0 && cellList.value[raw][col].value === cellList.value[raw][col-1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        cellList.value[raw][col].value += cellList.value[raw][col-1].value
+  for(let raw = newCellList.length - 1; raw >= 0; raw--) {
+    for (let col = newCellList[0].length - 1; col >= 1; col--) {
+      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col-1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw][col-1].value
         for(let e = col-1; e >= 1; e--) {
-          cellList.value[raw][e].value = cellList.value[raw][e-1].value
+          newCellList[raw][e].value = newCellList[raw][e-1].value
         }
-        cellList.value[raw][0].value = 0 //最后一个用0补充
+        newCellList[raw][0].value = 0 //最后一个用0补充
       }
     }
   }
+  return newCellList
 }
 
 
