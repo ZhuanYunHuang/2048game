@@ -56,7 +56,7 @@ const init = () => {
 
 //随机生产方块
 const generateCell = (_num, _value) => {
-  const num = _num || Math.floor(Math.random() * 2) + 1 //随机生成1个或2个方块
+  let num = _num || Math.floor(Math.random() * 2) + 1 //随机生成1个或2个方块
   // const canList = ['0-0', '1-0'] //可以生成的格子列表(value为0)
   const canList = [] //可以生成的格子列表(value为0)
   cellList.value.forEach((item) => {
@@ -66,7 +66,6 @@ const generateCell = (_num, _value) => {
       }
     })
   })
-  let n = num
   let canListLen = canList.length
 
   if(canListLen === 0) {
@@ -91,8 +90,10 @@ const generateCell = (_num, _value) => {
     return
   }
     return
+  } else if(canListLen <= 6) { //空位置<=6时只生产一个方块
+    num = 1
   }
-
+  let n = num
   const newCellList = []
   while(n--) {
     const cellData = {
