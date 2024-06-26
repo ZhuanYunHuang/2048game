@@ -6,12 +6,12 @@
           <span>分数</span>
           <span style="margin-top: 6px;">{{ totalGoal }}</span>
         </div>
-        <div> 
+        <!-- <div> 
           <div @click="baseHandle(1)">上</div>
           <div @click="baseHandle(2)">下</div>
           <div @click="baseHandle(3)">左</div>
           <div @click="baseHandle(4)">右</div>
-        </div>
+        </div> -->
       </div>
       <div class="score-box begin" @click="init">开始</div>
      </div>
