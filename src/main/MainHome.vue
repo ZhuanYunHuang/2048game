@@ -26,7 +26,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { getNumColor, getBgColor, getFontSize, throttle } from '@/assets/enum'
 
 const cellList = ref([
@@ -38,14 +38,11 @@ const cellList = ref([
 
 const isEnd = ref(false)
 
-const totalGoal = computed(() => {
-  let goal = 0
-  cellList.value.forEach(i => i.forEach(e => goal += e.value))
-  return goal
-})
+const totalGoal = ref(0)
 
 const init = () => {
   isEnd.value = false
+  totalGoal.value = 0
   cellList.value.forEach((item) => {
     item.forEach((_item) => {
       _item.value = 0
@@ -69,26 +66,27 @@ const generateCell = (_num, _value) => {
   let canListLen = canList.length
 
   if(canListLen === 0) {
-  let newCellList = upHandle()
-  if(!isChangeCell(newCellList, cellList.value)) {
-    isEnd.value = true
-    return
-  }
-  newCellList = downHandle()
-  if(!isChangeCell(newCellList, cellList.value)) {
-    isEnd.value = true
-    return
-  }
-  newCellList = leftHandle()
-  if(!isChangeCell(newCellList, cellList.value)) {
-    isEnd.value = true
-    return
-  }
-  newCellList = rightHandle()
-  if(!isChangeCell(newCellList, cellList.value)) {
-    isEnd.value = true
-    return
-  }
+    console.log('走不动了！！！！！');
+    let newCellList = upHandle()
+    if(!isChangeCell(newCellList, cellList.value)) {
+      isEnd.value = true
+      return
+    }
+    newCellList = downHandle()
+    if(!isChangeCell(newCellList, cellList.value)) {
+      isEnd.value = true
+      return
+    }
+    newCellList = leftHandle()
+    if(!isChangeCell(newCellList, cellList.value)) {
+      isEnd.value = true
+      return
+    }
+    newCellList = rightHandle()
+    if(!isChangeCell(newCellList, cellList.value)) {
+      isEnd.value = true
+      return
+    }
     return
   } else if(canListLen <= 6) { //空位置<=6时只生产一个方块
     num = 1
@@ -169,11 +167,10 @@ const upHandle = () => {
         }
       }
     }
-  }
-  for (let col = 0; col <= newCellList[0].length - 1; col++) {
     for(let raw = 0; raw <= newCellList.length - 2; raw++) {
       if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw+1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
         newCellList[raw][col].value += newCellList[raw+1][col].value
+        totalGoal.value += newCellList[raw][col].value
         for(let e = raw+1; e <= newCellList.length - 2; e++) {
           newCellList[e][col].value = newCellList[e+1][col].value
         }
@@ -197,14 +194,15 @@ const downHandle = () => {
             newCellList[e][col].value = newCellList[e-1][col].value
           }
           newCellList[0][col].value = 0 //最后一个用0补充
+        } else {
+          break
         }
       }
     }
-  }
-  for (let col = newCellList[0].length - 1; col >= 0; col--) {
     for(let raw = newCellList.length - 1; raw >= 1; raw--) {
       if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw-1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
         newCellList[raw][col].value += newCellList[raw-1][col].value
+        totalGoal.value += newCellList[raw][col].value
         for(let e = raw-1; e >= 1; e--) {
           newCellList[e][col].value = newCellList[e-1][col].value
         }
@@ -227,14 +225,15 @@ const leftHandle = () => {
             newCellList[raw][e].value = newCellList[raw][e+1].value
           }
           newCellList[raw][newCellList[0].length - 1].value = 0 //最后一个用0补充
+        } else {
+          break
         }
       }
     }
-  }
-  for(let raw = 0; raw <= newCellList.length - 1; raw++) {
     for (let col = 0; col <= newCellList[0].length - 2; col++) {
       if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col+1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
         newCellList[raw][col].value += newCellList[raw][col+1].value
+        totalGoal.value += newCellList[raw][col].value
         for(let e = col+1; e <= newCellList[0].length - 2; e++) {
           newCellList[raw][e].value = newCellList[raw][e+1].value
         }
@@ -257,14 +256,15 @@ const rightHandle = () => {
             newCellList[raw][e].value = newCellList[raw][e-1].value
           }
           newCellList[raw][0].value = 0 //最后一个用0补充
+        } else {
+          break
         }
       }
     }
-  }
-  for(let raw = newCellList.length - 1; raw >= 0; raw--) {
     for (let col = newCellList[0].length - 1; col >= 1; col--) {
       if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col-1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
         newCellList[raw][col].value += newCellList[raw][col-1].value
+        totalGoal.value += newCellList[raw][col].value
         for(let e = col-1; e >= 1; e--) {
           newCellList[raw][e].value = newCellList[raw][e-1].value
         }
