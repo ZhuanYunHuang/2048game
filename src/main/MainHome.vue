@@ -40,6 +40,8 @@ const isEnd = ref(false)
 
 const totalGoal = ref(0)
 
+const debounceTime = 200
+
 const init = () => {
   isEnd.value = false
   totalGoal.value = 0
@@ -102,7 +104,6 @@ const generateCell = (_num, _value) => {
     while(newCellList.find(item => item.id == newCell)) {
       newCell = canList[Math.floor(Math.random() * canListLen)] //防止生成在同一格子
     }
-    console.log('vvvv', newCell);
     cellData.id = newCell
     newCellList.push(cellData)
     if(canListLen === 1) break
@@ -146,9 +147,9 @@ const baseHandle = throttle((arrow) => {
   if(arrow === 3) cellList.value = leftHandle()
   if(arrow === 4) cellList.value = rightHandle() 
   if(isChangeCell(cellList.value, oldCellList)) {
-    setTimeout(generateCell, 250)
+    setTimeout(generateCell, debounceTime)
   }
-}, 250, { leading: true, trailing: false })
+}, debounceTime, { leading: true, trailing: false })
 
 //向上滑动
 const upHandle = () => {
