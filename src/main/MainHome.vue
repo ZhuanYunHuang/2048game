@@ -1,21 +1,28 @@
 <template>
   <div class="main-box flexMainYXcenter">
-     <div class="header">
+    <div class="header">
       <div class="flexMainXYcenter">
-        <div class="score-box flexMainYXcenter">
-          <span>分数{{ isEnd ? '结束' : '' }}</span>
-          <span style="margin-top: 6px;">{{ totalGoal }}</span>
-        </div>
+      <div class="score-box flexMainYXcenter">
+        <span>分数</span>
+        <span style="margin-top: 6px;">{{ totalGoal }}</span>
       </div>
-      <div class="score-box begin" @click="init">开始</div>
-     </div>
-     <div class="section">
+    </div>
+    <div class="score-box begin" @click="init">开始</div>
+    </div>
+    <div class="section">
       <tr v-for="(rowItem, rowIndex) in cellList" :key="rowIndex" class="cell-box flexMainXYcenter">
         <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter" :style="`color: ${getNumColor(cellItem.value)}; background: ${getBgColor(cellItem.value)}; font-size: ${getFontSize(cellItem.value)}px`">
           {{ cellItem.value === 0 ? '' : cellItem.value }}
         </td>
       </tr>
-     </div>
+    </div>
+    <div v-if="isEnd" class="end-box flexMainXcenter">
+      <div>
+        <div class="title-one">游戏结束</div>
+        <div class="title-one">得分：{{ totalGoal }}</div>
+        <div class="reset" @click="init">重新开始</div>
+      </div>
+    </div>  
   </div>
 </template>
 
@@ -50,8 +57,7 @@ const init = () => {
 //随机生产方块
 const generateCell = (_num, _value) => {
   let num = _num || Math.floor(Math.random() * 2) + 1 //随机生成1个或2个方块
-  // const canList = ['0-0', '1-0'] //可以生成的格子列表(value为0)
-  const canList = [] //可以生成的格子列表(value为0)
+  let canList = [] //可以生成的格子列表(value为0)
   cellList.value.forEach((item) => {
     item.forEach((_item) => {
       if(_item.value === 0) {
@@ -61,6 +67,39 @@ const generateCell = (_num, _value) => {
   })
   let canListLen = canList.length
 
+  if(canListLen <= 6) { //空位置<=6时只生产一个方块
+    num = 1
+  }
+  let n = num
+  const newCellList = []
+  while(n--) {
+    const cellData = {
+      id: null,
+      value: _value || (num === 1 && Math.floor(Math.random() * 10) > 8 ? 4 : 2) //生成2的概率80，4的概率20
+    }
+    let newCell = canList[Math.floor(Math.random() * canListLen)]
+    while(newCellList.find(item => item.id == newCell)) {
+      newCell = canList[Math.floor(Math.random() * canListLen)] //防止生成在同一格子
+    }
+    cellData.id = newCell
+    newCellList.push(cellData)
+    if(canListLen === 1) break
+  }
+
+  canList = []
+  newCellList.forEach((c) => {
+    cellList.value.forEach((item) => {
+      item.forEach((_item) => {
+        if(c.id == _item.id) {
+          _item.value = c.value
+        }
+        if(_item.value === 0) {
+          canList.push(_item.id)
+        }
+      })
+    })
+  })
+  canListLen = canList.length
   if(canListLen === 0) {
     console.log('走不动了！！！！！');
     let newCellList = upHandle()
@@ -84,33 +123,8 @@ const generateCell = (_num, _value) => {
       return
     }
     return
-  } else if(canListLen <= 6) { //空位置<=6时只生产一个方块
-    num = 1
-  }
-  let n = num
-  const newCellList = []
-  while(n--) {
-    const cellData = {
-      id: null,
-      value: _value || (num === 1 && Math.floor(Math.random() * 10) > 8 ? 4 : 2) //生成2的概率80，4的概率20
-    }
-    let newCell = canList[Math.floor(Math.random() * canListLen)]
-    while(newCellList.find(item => item.id == newCell)) {
-      newCell = canList[Math.floor(Math.random() * canListLen)] //防止生成在同一格子
-    }
-    cellData.id = newCell
-    newCellList.push(cellData)
-    if(canListLen === 1) break
-  }
-  newCellList.forEach((c) => {
-    cellList.value.forEach((item) => {
-      item.forEach((_item) => {
-        if(c.id == _item.id) {
-          _item.value = c.value
-        }
-      })
-    })
-  })
+  } 
+
   console.log('新值', ...newCellList);
   cellList.value.forEach((i, index) => {
     let s = ''
@@ -126,7 +140,6 @@ const isChangeCell = (newList, oldList) => {
   for (let i = 0; i < oldList.length; i++) {
     for (let j = 0; j < oldList[i].length; j++) {
       if(oldList[i][j].value !== newList[i][j].value) {
-        console.log('改变了');
         return true
       }
     }  
@@ -336,6 +349,25 @@ onMounted(() => {
         border-radius: 6px;
         transition: all .2s;
       }
+    }
+  }
+  .end-box{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 50%;
+    height: 30%;
+    background: #c4b8b8;
+    border-radius: 12px;
+    .title-one{
+      margin-bottom: 12px;
+    }
+    .reset{
+      border-radius: 8px;
+      padding: 8px;
+      background: #E19C66;
+      color: #fff;
     }
   }
 }
