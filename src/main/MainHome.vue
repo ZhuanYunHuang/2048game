@@ -102,25 +102,10 @@ const generateCell = (_num, _value) => {
   canListLen = canList.length
   if(canListLen === 0) {
     console.log('走不动了！！！！！');
-    let newCellList = upHandle()
-    if(!isChangeCell(newCellList, cellList.value)) {
-      isEnd.value = true
-      return
-    }
-    newCellList = downHandle()
-    if(!isChangeCell(newCellList, cellList.value)) {
-      isEnd.value = true
-      return
-    }
-    newCellList = leftHandle()
-    if(!isChangeCell(newCellList, cellList.value)) {
-      isEnd.value = true
-      return
-    }
-    newCellList = rightHandle()
-    if(!isChangeCell(newCellList, cellList.value)) {
-      isEnd.value = true
-      return
+    if(!isChangeCell(upHandle(), cellList.value) && !isChangeCell(downHandle(), cellList.value) && !isChangeCell(leftHandle(), cellList.value) && !isChangeCell(rightHandle(), cellList.value)) {
+      setTimeout(() => {
+        isEnd.value = true
+      }, 1000)
     }
     return
   } 
@@ -358,8 +343,9 @@ onMounted(() => {
     transform: translate(-50%, -50%);
     width: 50%;
     height: 30%;
-    background: #c4b8b8;
+    background: rgba(196, 184, 184);
     border-radius: 12px;
+    opacity: 0.7;
     .title-one{
       margin-bottom: 12px;
     }
