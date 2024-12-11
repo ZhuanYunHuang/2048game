@@ -2,16 +2,21 @@
   <div class="main-box flexMainYXcenter">
     <div class="header">
       <div class="flexMainXYcenter">
-      <div class="score-box flexMainYXcenter">
-        <span>分数</span>
-        <span style="margin-top: 6px;">{{ totalGoal }}</span>
+        <div class="score-box flexMainYXcenter" style="margin-right: 8px;">
+          <span>分数</span>
+          <span style="margin-top: 6px;">{{ totalGoal }}</span>
+        </div>
+        <div class="score-box flexMainYXcenter">
+          <span>最高记录</span>
+          <span style="margin-top: 6px;">{{ maxGoal }}</span>
+        </div>
       </div>
-    </div>
-    <div class="score-box begin" @click="init">开始</div>
+      <div class="score-box begin" @click="init">开始</div>
     </div>
     <div class="section">
       <tr v-for="(rowItem, rowIndex) in cellList" :key="rowIndex" class="cell-box flexMainXYcenter">
-        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter" :style="`color: ${getNumColor(cellItem.value)}; background: ${getBgColor(cellItem.value)}; font-size: ${getFontSize(cellItem.value)}px`">
+        <td v-for="cellItem in rowItem" :key="cellItem.id" class="cell flexMainXcenter"
+          :style="`color: ${getNumColor(cellItem.value)}; background: ${getBgColor(cellItem.value)}; font-size: ${getFontSize(cellItem.value)}px`">
           {{ cellItem.value === 0 ? '' : cellItem.value }}
         </td>
       </tr>
@@ -22,24 +27,27 @@
         <div class="title-one">得分：{{ totalGoal }}</div>
         <div class="reset" @click="init">重新开始</div>
       </div>
-    </div>  
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
 import { getNumColor, getBgColor, getFontSize, throttle } from '@/assets/enum'
+import api from '@/api'
 
 const cellList = ref([
-  [ { id: '0-0', value: 0 }, { id: '0-1', value: 0 }, { id: '0-2', value: 0 }, { id: '0-3', value: 0 } ],
-  [ { id: '1-0', value: 0 }, { id: '1-1', value: 0 }, { id: '1-2', value: 0 }, { id: '1-3', value: 0 } ],
-  [ { id: '2-0', value: 0 }, { id: '2-1', value: 0 }, { id: '2-2', value: 0 }, { id: '2-3', value: 0 } ],
-  [ { id: '3-0', value: 0 }, { id: '3-1', value: 0 }, { id: '3-2', value: 0 }, { id: '3-3', value: 0 } ],
+  [{ id: '0-0', value: 0 }, { id: '0-1', value: 0 }, { id: '0-2', value: 0 }, { id: '0-3', value: 0 }],
+  [{ id: '1-0', value: 0 }, { id: '1-1', value: 0 }, { id: '1-2', value: 0 }, { id: '1-3', value: 0 }],
+  [{ id: '2-0', value: 0 }, { id: '2-1', value: 0 }, { id: '2-2', value: 0 }, { id: '2-3', value: 0 }],
+  [{ id: '3-0', value: 0 }, { id: '3-1', value: 0 }, { id: '3-2', value: 0 }, { id: '3-3', value: 0 }],
 ])
 
 const isEnd = ref(false)
 
 const totalGoal = ref(0)
+
+const maxGoal = ref(0)
 
 const debounceTime = 200
 
@@ -52,6 +60,17 @@ const init = () => {
     })
   })
   generateCell(2, 2)
+  getMaxGoal()
+}
+
+const getMaxGoal = () => {
+  api.getMaxScore({}, (res) => {
+    if(res && res.code === 200) {
+      maxGoal.value = res.data[0].score || 0
+    }
+  }, (err) => {
+    console.log(err)
+  })
 }
 
 //随机生产方块
@@ -60,55 +79,68 @@ const generateCell = (_num, _value) => {
   let canList = [] //可以生成的格子列表(value为0)
   cellList.value.forEach((item) => {
     item.forEach((_item) => {
-      if(_item.value === 0) {
+      if (_item.value === 0) {
         canList.push(_item.id)
       }
     })
   })
   let canListLen = canList.length
 
-  if(canListLen <= 6) { //空位置<=6时只生产一个方块
+  if (canListLen <= 6) { //空位置<=6时只生产一个方块
     num = 1
   }
   let n = num
   const newCellList = []
-  while(n--) {
+  while (n--) {
     const cellData = {
       id: null,
       value: _value || (num === 1 && Math.floor(Math.random() * 10) > 8 ? 4 : 2) //生成2的概率80，4的概率20
     }
     let newCell = canList[Math.floor(Math.random() * canListLen)]
-    while(newCellList.find(item => item.id == newCell)) {
+    while (newCellList.find(item => item.id == newCell)) {
       newCell = canList[Math.floor(Math.random() * canListLen)] //防止生成在同一格子
     }
     cellData.id = newCell
     newCellList.push(cellData)
-    if(canListLen === 1) break
+    if (canListLen === 1) break
   }
 
   canList = []
   newCellList.forEach((c) => {
     cellList.value.forEach((item) => {
       item.forEach((_item) => {
-        if(c.id == _item.id) {
+        if (c.id == _item.id) {
           _item.value = c.value
         }
-        if(_item.value === 0) {
+        if (_item.value === 0) {
           canList.push(_item.id)
         }
       })
     })
   })
   canListLen = canList.length
-  if(canListLen === 0) {
-    console.log('走不动了！！！！！');
-    if(!isChangeCell(upHandle(), cellList.value) && !isChangeCell(downHandle(), cellList.value) && !isChangeCell(leftHandle(), cellList.value) && !isChangeCell(rightHandle(), cellList.value)) {
+  if (canListLen === 0) {
+    if (!isChangeCell(upHandle(), cellList.value) && !isChangeCell(downHandle(), cellList.value) && !isChangeCell(leftHandle(), cellList.value) && !isChangeCell(rightHandle(), cellList.value)) {
       setTimeout(() => {
         isEnd.value = true
+        console.log('走不动了！！！！！', isEnd.value);
+        api.addScore({
+          score: totalGoal.value,
+          name: '张三',
+          user_id: '007'
+        }, (res) => {
+          if(res && res.code === 200) {
+            console.log('添加记录成功', res)
+          } else {
+            console.log('添加记录失败', res)
+          }
+        }, (err) => {
+          console.log('添加记录失败', err)
+        })
       }, 1000)
     }
     return
-  } 
+  }
 
   console.log('新值', ...newCellList);
   cellList.value.forEach((i, index) => {
@@ -116,7 +148,7 @@ const generateCell = (_num, _value) => {
     i.forEach((item) => {
       s += item.value + ','
     })
-    console.log('第'+ index +'行', ...s);
+    console.log('第' + index + '行', ...s);
   })
 }
 
@@ -124,21 +156,21 @@ const generateCell = (_num, _value) => {
 const isChangeCell = (newList, oldList) => {
   for (let i = 0; i < oldList.length; i++) {
     for (let j = 0; j < oldList[i].length; j++) {
-      if(oldList[i][j].value !== newList[i][j].value) {
+      if (oldList[i][j].value !== newList[i][j].value) {
         return true
       }
-    }  
+    }
   }
   return false
 }
 
 const baseHandle = throttle((arrow) => {
   const oldCellList = JSON.parse(JSON.stringify(cellList.value))
-  if(arrow === 1) cellList.value = upHandle() 
-  if(arrow === 2) cellList.value = downHandle()
-  if(arrow === 3) cellList.value = leftHandle()
-  if(arrow === 4) cellList.value = rightHandle() 
-  if(isChangeCell(cellList.value, oldCellList)) {
+  if (arrow === 1) cellList.value = upHandle()
+  if (arrow === 2) cellList.value = downHandle()
+  if (arrow === 3) cellList.value = leftHandle()
+  if (arrow === 4) cellList.value = rightHandle()
+  if (isChangeCell(cellList.value, oldCellList)) {
     setTimeout(generateCell, debounceTime)
   }
 }, debounceTime, { leading: true, trailing: false })
@@ -147,12 +179,12 @@ const baseHandle = throttle((arrow) => {
 const upHandle = () => {
   const newCellList = JSON.parse(JSON.stringify(cellList.value))
   for (let col = 0; col <= newCellList[0].length - 1; col++) {
-    for(let raw = 0; raw <= newCellList.length - 1; raw++) {
+    for (let raw = 0; raw <= newCellList.length - 1; raw++) {
       let n = newCellList.length - 1 - raw
-      while(n--) {
-        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = raw; e <= newCellList.length - 2; e++) {
-            newCellList[e][col].value = newCellList[e+1][col].value
+      while (n--) {
+        if (newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for (let e = raw; e <= newCellList.length - 2; e++) {
+            newCellList[e][col].value = newCellList[e + 1][col].value
           }
           newCellList[newCellList.length - 1][col].value = 0 //最后一个用0补充
         } else {
@@ -160,12 +192,12 @@ const upHandle = () => {
         }
       }
     }
-    for(let raw = 0; raw <= newCellList.length - 2; raw++) {
-      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw+1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        newCellList[raw][col].value += newCellList[raw+1][col].value
+    for (let raw = 0; raw <= newCellList.length - 2; raw++) {
+      if (newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw + 1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw + 1][col].value
         totalGoal.value += newCellList[raw][col].value
-        for(let e = raw+1; e <= newCellList.length - 2; e++) {
-          newCellList[e][col].value = newCellList[e+1][col].value
+        for (let e = raw + 1; e <= newCellList.length - 2; e++) {
+          newCellList[e][col].value = newCellList[e + 1][col].value
         }
         newCellList[newCellList.length - 1][col].value = 0 //最后一个用0补充
       }
@@ -179,12 +211,12 @@ const upHandle = () => {
 const downHandle = () => {
   const newCellList = JSON.parse(JSON.stringify(cellList.value))
   for (let col = newCellList[0].length - 1; col >= 0; col--) {
-    for(let raw = newCellList.length - 1; raw >= 0; raw--) {
+    for (let raw = newCellList.length - 1; raw >= 0; raw--) {
       let n = raw
-      while(n--) {
-        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = raw; e >= 1; e--) {
-            newCellList[e][col].value = newCellList[e-1][col].value
+      while (n--) {
+        if (newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for (let e = raw; e >= 1; e--) {
+            newCellList[e][col].value = newCellList[e - 1][col].value
           }
           newCellList[0][col].value = 0 //最后一个用0补充
         } else {
@@ -192,12 +224,12 @@ const downHandle = () => {
         }
       }
     }
-    for(let raw = newCellList.length - 1; raw >= 1; raw--) {
-      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw-1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        newCellList[raw][col].value += newCellList[raw-1][col].value
+    for (let raw = newCellList.length - 1; raw >= 1; raw--) {
+      if (newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw - 1][col].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw - 1][col].value
         totalGoal.value += newCellList[raw][col].value
-        for(let e = raw-1; e >= 1; e--) {
-          newCellList[e][col].value = newCellList[e-1][col].value
+        for (let e = raw - 1; e >= 1; e--) {
+          newCellList[e][col].value = newCellList[e - 1][col].value
         }
         newCellList[0][col].value = 0 //最后一个用0补充
       }
@@ -209,13 +241,13 @@ const downHandle = () => {
 //向左滑动
 const leftHandle = () => {
   const newCellList = JSON.parse(JSON.stringify(cellList.value))
-  for(let raw = 0; raw <= newCellList.length - 1; raw++) {
+  for (let raw = 0; raw <= newCellList.length - 1; raw++) {
     for (let col = 0; col <= newCellList[0].length - 1; col++) {
       let n = newCellList.length - 1 - col
-      while(n--) {
-        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = col; e <= newCellList[0].length - 2; e++) {
-            newCellList[raw][e].value = newCellList[raw][e+1].value
+      while (n--) {
+        if (newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for (let e = col; e <= newCellList[0].length - 2; e++) {
+            newCellList[raw][e].value = newCellList[raw][e + 1].value
           }
           newCellList[raw][newCellList[0].length - 1].value = 0 //最后一个用0补充
         } else {
@@ -224,11 +256,11 @@ const leftHandle = () => {
       }
     }
     for (let col = 0; col <= newCellList[0].length - 2; col++) {
-      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col+1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        newCellList[raw][col].value += newCellList[raw][col+1].value
+      if (newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col + 1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw][col + 1].value
         totalGoal.value += newCellList[raw][col].value
-        for(let e = col+1; e <= newCellList[0].length - 2; e++) {
-          newCellList[raw][e].value = newCellList[raw][e+1].value
+        for (let e = col + 1; e <= newCellList[0].length - 2; e++) {
+          newCellList[raw][e].value = newCellList[raw][e + 1].value
         }
         newCellList[raw][newCellList[0].length - 1].value = 0 //最后一个用0补充
       }
@@ -240,13 +272,13 @@ const leftHandle = () => {
 //向右滑动
 const rightHandle = () => {
   const newCellList = JSON.parse(JSON.stringify(cellList.value))
-  for(let raw = newCellList.length - 1; raw >= 0; raw--) {
+  for (let raw = newCellList.length - 1; raw >= 0; raw--) {
     for (let col = newCellList[0].length - 1; col >= 0; col--) {
       let n = col
-      while(n--) {
-        if(newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
-          for(let e = col; e >=1; e--) {
-            newCellList[raw][e].value = newCellList[raw][e-1].value
+      while (n--) {
+        if (newCellList[raw][col].value === 0) { //如果有0值则后面的值都推前一位
+          for (let e = col; e >= 1; e--) {
+            newCellList[raw][e].value = newCellList[raw][e - 1].value
           }
           newCellList[raw][0].value = 0 //最后一个用0补充
         } else {
@@ -255,11 +287,11 @@ const rightHandle = () => {
       }
     }
     for (let col = newCellList[0].length - 1; col >= 1; col--) {
-      if(newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col-1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
-        newCellList[raw][col].value += newCellList[raw][col-1].value
+      if (newCellList[raw][col].value != 0 && newCellList[raw][col].value === newCellList[raw][col - 1].value) { //如果后一位值和当前值相等则相加，后面的值都推前一位
+        newCellList[raw][col].value += newCellList[raw][col - 1].value
         totalGoal.value += newCellList[raw][col].value
-        for(let e = col-1; e >= 1; e--) {
-          newCellList[raw][e].value = newCellList[raw][e-1].value
+        for (let e = col - 1; e >= 1; e--) {
+          newCellList[raw][e].value = newCellList[raw][e - 1].value
         }
         newCellList[raw][0].value = 0 //最后一个用0补充
       }
@@ -271,21 +303,21 @@ const rightHandle = () => {
 
 //键盘操作
 const keyHandle = () => {
-document.addEventListener('keydown', function(event) {
-  if (event.key === 'ArrowUp') {
-    // 用户按下了上箭头键
-    baseHandle(1)
-  } else if (event.key === 'ArrowDown') {
-    // 用户按下了下箭头键
-    baseHandle(2)
-  } else if (event.key === 'ArrowLeft') {
-    // 用户按下了左箭头键
-    baseHandle(3)
-  } else if (event.key === 'ArrowRight') {
-    // 用户按下了右箭头键
-    baseHandle(4)
-  }
-});
+  document.addEventListener('keydown', function (event) {
+    if (event.key === 'ArrowUp') {
+      // 用户按下了上箭头键
+      baseHandle(1)
+    } else if (event.key === 'ArrowDown') {
+      // 用户按下了下箭头键
+      baseHandle(2)
+    } else if (event.key === 'ArrowLeft') {
+      // 用户按下了左箭头键
+      baseHandle(3)
+    } else if (event.key === 'ArrowRight') {
+      // 用户按下了右箭头键
+      baseHandle(4)
+    }
+  });
 
 }
 
@@ -296,35 +328,40 @@ onMounted(() => {
 
 </script>
 <style scoped lang="less">
-.main-box{
+.main-box {
   width: 500px;
   background: #f8f3dc;
-  padding:24px;
+  padding: 24px;
   box-sizing: border-box;
   border-radius: 16px;
-  .header{
-    .score-box{
+
+  .header {
+    .score-box {
       width: 72px;
       background: #B8ADA1;
       margin-bottom: 24px;
       border-radius: 8px;
       padding: 8px 0;
-      &.begin{
+
+      &.begin {
         background: #E19C66;
         color: #fff;
       }
     }
   }
-  .section{
+
+  .section {
     width: 100%;
     box-sizing: border-box;
     aspect-ratio: 1;
     padding: 5px;
     background: #B7ACA1;
     border-radius: 6px;
-    .cell-box{
+
+    .cell-box {
       width: 100%;
-      .cell{
+
+      .cell {
         width: 25%;
         aspect-ratio: 1;
         margin: 5px;
@@ -336,7 +373,8 @@ onMounted(() => {
       }
     }
   }
-  .end-box{
+
+  .end-box {
     position: fixed;
     top: 50%;
     left: 50%;
@@ -346,10 +384,12 @@ onMounted(() => {
     background: rgba(196, 184, 184);
     border-radius: 12px;
     opacity: 0.7;
-    .title-one{
+
+    .title-one {
       margin-bottom: 12px;
     }
-    .reset{
+
+    .reset {
       border-radius: 8px;
       padding: 8px;
       background: #E19C66;
